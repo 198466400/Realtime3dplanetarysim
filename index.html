@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planetary-core MHD analog: 3D SIM</title>
+<style>
+:root{--bg:#e9edf0;--fg:#14202b;--mut:#51606d;--pan:#fff;--line:#c5ccd3;--sim:#c2410c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d141b;--fg:#e6ebf0;--mut:#93a1ae;--pan:#18222c;--line:#2c3a47;--sim:#fb923c}}
+:root[data-theme="dark"]{--bg:#0d141b;--fg:#e6ebf0;--mut:#93a1ae;--pan:#18222c;--line:#2c3a47;--sim:#fb923c}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Georgia,serif;padding:12px;max-width:1100px;margin-inline:auto}
+h1{font-size:1.2rem;margin:0 0 4px}h2{font-size:1rem;margin:0 0 6px}p{margin:0 0 8px}.mut{color:var(--mut)}
+.flag{border:2px solid var(--sim);color:var(--sim);padding:6px 10px;border-radius:4px;margin:8px 0;font-size:.88rem}
+#stage{position:relative;height:72vh;min-height:460px;border:1px solid var(--line);border-radius:6px;overflow:hidden;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.lab{position:absolute;pointer-events:none;padding:6px 8px;font-size:.78rem;color:var(--sim);font-weight:bold;text-shadow:0 0 4px var(--bg),0 0 4px var(--bg)}
+.lab i{display:block;font-weight:normal;color:var(--mut);font-style:normal}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+button{font:inherit;background:var(--pan);color:var(--fg);border:1px solid var(--fg);border-radius:4px;padding:8px 12px;min-height:44px}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sim);outline-offset:2px}
+input[type=range]{flex:1;min-width:150px;min-height:44px}
+label.c{display:inline-flex;gap:4px;align-items:center;min-height:44px}
+.read{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
+.read div,.box{background:var(--pan);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+.read b{color:var(--sim);display:block}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+@media (max-width:640px){.cols{grid-template-columns:1fr}}
+.box{padding:10px;overflow-x:auto}.gate{border-color:var(--sim)}
+ul{margin:0;padding-left:18px;font-size:.88rem}
+table{border-collapse:collapse;font-size:.82rem;width:100%}td,th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left}
+</style></head><body>
+<h1>Planetary-core MHD pattern analog: 3D</h1>
+<div class="flag" role="note"><b>PLACEHOLDER DIMENSIONS:</b> 20 mm orb, N42-class axial dipole in a sealed stainless shell, cell drawn at arbitrary scale. Everything here is <b>SIMULATED, NOT MEASURED</b>.</div>
+<div id="stage"><canvas id="cv"></canvas><div class="lab" id="la"></div><div class="lab" id="lb"></div></div>
+<p class="mut" style="margin:6px 0">Drag to rotate, pinch or scroll to zoom. Pane A starts outside the cell, so zoom in to go through the wall. Pane B sits inside the cell at the mercury surface. Each pane has its own camera.</p>
+<div class="ctl">
+<label for="cur">Current</label><input id="cur" type="range" min="0" max="10" step="0.1" value="4"><output id="curo">4.0 A</output>
+<button id="rev">Reverse current</button><button id="flip">Flip polarity</button><button id="pz">Pause</button>
+</div>
+<div class="ctl">
+<label class="c"><input type="checkbox" id="tcell" checked>Cell</label>
+<label class="c"><input type="checkbox" id="tfld" checked>Field lines</label>
+<label class="c"><input type="checkbox" id="tpar" checked>Flow tracers</label>
+<label class="c"><input type="checkbox" id="thg" checked>Mercury</label>
+</div>
+<div class="read">
+<div>Swirl rate <b id="r1"></b></div><div>Orb tilt <b id="r2"></b></div><div>Handedness <b id="r3"></b></div><div>Immersion <b>~55% volume (SIM)</b></div>
+</div>
+<div class="cols">
+<div class="box gate"><h2>Claim gate</h2><p><b>"Precession" is locked.</b> The readout says <i>tilt dynamics</i>. It unlocks only when a logged bench run shows a sustained cone with gyroscopic scaling.</p><p class="mut">Bench: no log loaded. Null run N0 not recorded. Colors: orange is simulated, measured data will use teal.</p></div>
+<div class="box"><h2>Does NOT model</h2><ul>
+<li>core pressure (~330 GPa) or temperature (~5000 K)</li><li>self-sustaining dynamo action (fields are imposed)</li><li>core-mantle chemistry</li><li>real gravity or density stratification (orb is lighter than the fluid)</li><li>gravitational-torque precession, Chandler wobble</li><li>spherical shell geometry (cube cell is 3-fold symmetric)</li><li>alternating-polarity fields</li><li>real fluid dynamics: the swirl and tilt are a qualitative reduced model</li></ul></div>
+</div>
+<div class="box" style="margin-top:10px"><h2>Scale ladder</h2>
+<table><tr><th>Rung</th><th>Magnetic Re</th><th>Hartmann</th><th>Ekman</th><th>Rossby</th></tr>
+<tr><td>Planet core</td><td colspan="4">cited reference needed</td></tr>
+<tr><td>Lab rotating MHD</td><td colspan="4">cited reference needed</td></tr>
+<tr><td>This bench</td><td colspan="4">compute after real orb, magnet and current. Expected magnetic Re far below 1, so no dynamo.</td></tr></table></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const cv=document.getElementById('cv'),st=document.getElementById('stage');
+const ren=new THREE.WebGLRenderer({canvas:cv,antialias:true});ren.localClippingEnabled=true;ren.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();scene.add(new THREE.HemisphereLight(0xffffff,0x445566,.85));
+const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(2,4,3);scene.add(dl);
+const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1,1,1).normalize(),new THREE.Vector3(0,1,0));
+const L=-0.3,RO=0.14,OY=L+0.04;
+// cube on vertex
+const cell=new THREE.Group();cell.quaternion.copy(q);scene.add(cell);
+const bg=new THREE.BoxGeometry(2,2,2);
+cell.add(new THREE.Mesh(bg,new THREE.MeshPhongMaterial({color:0x88aacc,transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false})));
+cell.add(new THREE.LineSegments(new THREE.EdgesGeometry(bg),new THREE.LineBasicMaterial({color:0x7b8794})));
+// mercury
+const merc=new THREE.Group();scene.add(merc);
+const plane=new THREE.Plane(new THREE.Vector3(0,-1,0),L);
+const hm=new THREE.Mesh(bg,new THREE.MeshPhongMaterial({color:0xaab4be,specular:0xffffff,shininess:120,side:THREE.DoubleSide,clippingPlanes:[plane]}));hm.quaternion.copy(q);merc.add(hm);
+const V=[];for(const x of[-1,1])for(const y of[-1,1])for(const z of[-1,1])V.push(new THREE.Vector3(x,y,z).applyQuaternion(q));
+const pts=[];for(let i=0;i<8;i++)for(let j=i+1;j<8;j++){const d=i^j;if(d==1||d==2||d==4){const A=V[i],B=V[j];if((A.y-L)*(B.y-L)<0)pts.push(A.clone().lerp(B,(L-A.y)/(B.y-A.y)))}}
+pts.sort((p,r)=>Math.atan2(p.z,p.x)-Math.atan2(r.z,r.x));
+const n=pts.length,pos=[0,L,0],idx=[];pts.forEach((p,i)=>{pos.push(p.x,L,p.z);idx.push(0,i+1,((i+1)%n)+1)});
+const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));sg.setIndex(idx);sg.computeVertexNormals();
+merc.add(new THREE.Mesh(sg,new THREE.MeshPhongMaterial({color:0xc4ccd4,specular:0xffffff,shininess:200,side:THREE.DoubleSide})));
+// rim electrode ring and radial current lines on surface
+const rim=pts.flatMap(p=>[p.x,L+.004,p.z]);const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.Float32BufferAttribute(rim,3));
+scene.add(new THREE.LineLoop(rg,new THREE.LineBasicMaterial({color:0xea580c})));
+const rad=[];pts.forEach(p=>rad.push(0,L+.004,0,p.x,L+.004,p.z));const radg=new THREE.BufferGeometry();radg.setAttribute('position',new THREE.Float32BufferAttribute(rad,3));
+scene.add(new THREE.LineSegments(radg,new THREE.LineBasicMaterial({color:0xea580c,transparent:true,opacity:.35})));
+// center electrode rod
+const rod=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,Math.sqrt(3)+L,12),new THREE.MeshPhongMaterial({color:0x777f88}));rod.position.y=(-Math.sqrt(3)+L)/2;scene.add(rod);
+// orb
+const orb=new THREE.Group();orb.position.set(0,OY,0);scene.add(orb);
+const spin=new THREE.Group();orb.add(spin);
+spin.add(new THREE.Mesh(new THREE.SphereGeometry(RO,32,24),new THREE.MeshPhongMaterial({color:0x5b6670,specular:0xffffff,shininess:90})));
+[[0,RO,0,0xea580c],[RO,0,0,0xffd166],[0,0,RO,0x38bdf8]].forEach(m=>{const s=new THREE.Mesh(new THREE.SphereGeometry(.018,12,8),new THREE.MeshBasicMaterial({color:m[3]}));s.position.set(m[0],m[1],m[2]);spin.add(s)});
+const ax=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-RO*2.2,0),new THREE.Vector3(0,RO*2.2,0)]);
+orb.add(new THREE.Line(ax,new THREE.LineBasicMaterial({color:0xea580c})));
+const tip=new THREE.Mesh(new THREE.ConeGeometry(.02,.05,12),new THREE.MeshBasicMaterial({color:0xea580c}));tip.position.y=RO*2.2;orb.add(tip);
+// dipole field lines (meridian loops, r = s sin^2 theta)
+const fld=new THREE.Group();orb.add(fld);const fp=[];
+for(const s of[.3,.5,.75])for(let k=0;k<8;k++){const ph=k*Math.PI/4,t0=Math.asin(Math.sqrt(RO*1.05/s));let prev=null;
+ for(let i=0;i<=28;i++){const th=t0+(Math.PI-2*t0)*i/28,r=s*Math.sin(th)**2;const p=[r*Math.sin(th)*Math.cos(ph),r*Math.cos(th),r*Math.sin(th)*Math.sin(ph)];if(prev)fp.push(...prev,...p);prev=p}}
+const fg=new THREE.BufferGeometry();fg.setAttribute('position',new THREE.Float32BufferAttribute(fp,3));
+fld.add(new THREE.LineSegments(fg,new THREE.LineBasicMaterial({color:0xfb923c,transparent:true,opacity:.45})));
+// tracers
+const NP=360,P=[...Array(NP)].map(()=>({r:.2+Math.random()*.6,th:Math.random()*6.283,y:L-Math.random()*.28}));
+const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(NP*3),3));
+const par=new THREE.Points(pg,new THREE.PointsMaterial({color:0xff7a2f,size:.022}));scene.add(par);
+// state
+let I=4,sI=1,sB=1,paused=false,om=0,tx=0,tz=0,vx=0,vz=0,ph=0,t=0;
+const $=id=>document.getElementById(id);
+$('cur').oninput=e=>{I=+e.target.value;$('curo').textContent=I.toFixed(1)+' A'};
+$('rev').onclick=()=>sI*=-1;$('flip').onclick=()=>{sB*=-1;orb.scale.y=1;fld.rotation.x=sB>0?0:Math.PI;tip.rotation.x=sB>0?0:Math.PI;tip.position.y=sB>0?RO*2.2:-RO*2.2};
+$('pz').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume':'Pause'};
+$('tcell').onchange=e=>cell.visible=e.target.checked;$('tfld').onchange=e=>fld.visible=e.target.checked;
+$('tpar').onchange=e=>par.visible=e.target.checked;$('thg').onchange=e=>merc.visible=e.target.checked;
+function step(dt){const d=I*sI*sB;om+=(.9*d-om)*Math.min(1,dt*1.2);
+ const k=9,c=1.4,F=.03*d;vx+=(-k*tx-c*vx+F*Math.sin(t*2.3+1))*dt;tx+=vx*dt;vz+=(-k*tz-c*vz+F*Math.sin(t*1.7+2))*dt;tz+=vz*dt;
+ ph-=.6*om*dt;t+=dt;P.forEach(p=>p.th+=om*dt*(1.5-.9*p.r));}
+function apply(){orb.rotation.set(tx,0,tz);spin.rotation.y=ph;
+ const a=pg.attributes.position;P.forEach((p,i)=>a.setXYZ(i,p.r*Math.cos(p.th),p.y,p.r*Math.sin(p.th)));a.needsUpdate=true;
+ const dd=I*sI*sB,deg=Math.hypot(tx,tz)*57.3;$('r1').textContent=(om*9.55).toFixed(1)+' rpm (SIM)';$('r2').textContent=deg.toFixed(2)+' deg tilt dynamics (SIM)';
+ $('r3').textContent=Math.abs(dd)<.05?'none (SIM)':dd>0?'CCW from above (SIM)':'CW from above (SIM)'}
+// panes with independent orbit cameras
+const cams=[0,1].map(()=>new THREE.PerspectiveCamera(55,1,.01,50));
+const pn=[{az:.8,pol:1.15,dist:3.4,tg:new THREE.Vector3(0,-.3,0),min:.12},{az:.4,pol:1.45,dist:.5,tg:new THREE.Vector3(0,OY,0),min:.1}];
+function place(){pn.forEach((p,i)=>{const c=cams[i];c.position.set(p.tg.x+p.dist*Math.sin(p.pol)*Math.cos(p.az),p.tg.y+p.dist*Math.cos(p.pol),p.tg.z+p.dist*Math.sin(p.pol)*Math.sin(p.az));c.lookAt(p.tg)})}
+let W=1,H=1,rects=[];
+function layout(){const r=st.getBoundingClientRect();W=r.width;H=r.height;ren.setSize(W,H,false);
+ if(W>H*1.1)rects=[{x:0,y:0,w:W/2-1,h:H},{x:W/2+1,y:0,w:W/2-1,h:H}];else rects=[{x:0,y:0,w:W,h:H/2-1},{x:0,y:H/2+1,w:W,h:H/2-1}];
+ [['la','A  outside, free camera. Zoom in to enter the cell.'],['lb','B  inside view at the mercury surface.']].forEach((l,i)=>{const e=$(l[0]),R=rects[i];e.style.left=R.x+'px';e.style.top=R.y+'px';e.innerHTML=l[1]+'<i>SIMULATED, NOT MEASURED. Placeholder dimensions.</i>'})}
+new ResizeObserver(layout).observe(st);layout();
+// pointer
+const ptr=new Map();let pd=0;
+const paneAt=(x,y)=>rects.findIndex(r=>x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h);
+cv.addEventListener('pointerdown',e=>{const b=cv.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x,y,p:paneAt(x,y)});if(ptr.size==2){const[a,c]=[...ptr.values()];pd=Math.hypot(a.x-c.x,a.y-c.y)}});
+cv.addEventListener('pointermove',e=>{const o=ptr.get(e.pointerId);if(!o)return;const b=cv.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;
+ if(ptr.size==1&&o.p>=0){const p=pn[o.p];p.az-=(x-o.x)*.008;p.pol=Math.min(3.09,Math.max(.05,p.pol-(y-o.y)*.008))}
+ o.x=x;o.y=y;if(ptr.size==2){const[a,c]=[...ptr.values()],d=Math.hypot(a.x-c.x,a.y-c.y),p=pn[a.p>=0?a.p:0];p.dist=Math.min(10,Math.max(p.min,p.dist*pd/d));pd=d}});
+const up=e=>ptr.delete(e.pointerId);cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',e=>{e.preventDefault();const b=cv.getBoundingClientRect(),i=paneAt(e.clientX-b.left,e.clientY-b.top);if(i<0)return;const p=pn[i];p.dist=Math.min(10,Math.max(p.min,p.dist*Math.exp(e.deltaY*.001)))},{passive:false});
+// loop
+let last=performance.now();
+function loop(nw){const dt=Math.min(.05,(nw-last)/1000);last=nw;if(!paused)step(dt);apply();place();
+ ren.setScissorTest(true);ren.setClearColor(new THREE.Color(css('--bg')));
+ rects.forEach((R,i)=>{const y=H-R.y-R.h;ren.setViewport(R.x,y,R.w,R.h);ren.setScissor(R.x,y,R.w,R.h);cams[i].aspect=R.w/R.h;cams[i].updateProjectionMatrix();ren.render(scene,cams[i])});
+ requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script></body></html>
